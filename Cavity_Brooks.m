@@ -31,7 +31,7 @@ global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
 imax = 17;   	% Number of points in the x-direction (use odd numbers only)
-jmax = 17;   	% Number of points in the y-direction (use odd numbers only)
+jmax = 17 ;   	% Number of points in the y-direction (use odd numbers only)
 neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
 %********************************************
 %***** All  variables declared here. **
@@ -61,7 +61,7 @@ six    = 6.0;
 nmax = 500000;        % Maximum number of iterations
 iterout = 5000;       % Number of time steps between solution output
 imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
-isgs = 1 ;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+isgs = 0 ;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
@@ -207,14 +207,9 @@ output_file_headers();
 % Set Initial Profile for u vector
 [ninit, rtime, resinit] = initial(ninit, rtime, resinit);
 
-u
 % Set Boundary Conditions for u
 set_boundary_conditions();
-u
-imax
-jmax
-zero
-        pause
+
 % Write out inital conditions to solution file
 write_output(ninit, resinit, rtime);
 
@@ -1110,8 +1105,29 @@ global u uold artviscx artviscy dt s
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-for i = 2:imax-1 %(i=1;i<imax-1;i++)
-    for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
+% for i = 2:imax-1 %(i=1;i<imax-1;i++)
+%     for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
+%         uvel2 = uold(i,j,2)*uold(i,j,2)+uold(i,j,3)*uold(i,j,3);
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))/(two*dx);
+%         dudx = (uold(i+1,j,2)-uold(i-1,j,2))/(two*dx);
+%         dvdx = (uold(i+1,j,3)-uold(i-1,j,3))/(two*dx);
+%         dpdy = (uold(i,j+1,1)-uold(i,j-1,1))/(two*dy);
+%         dudy = (uold(i,j+1,2)-uold(i,j-1,2))/(two*dy);
+%         dvdy = (uold(i,j+1,3)-uold(i,j-1,3))/(two*dy);
+%         d2udx2 = (uold(i+1,j,2)-two*uold(i,j,2)+uold(i-1,j,2))/(dx^2);
+%         d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx^2);
+%         d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy^2);
+%         d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy^2);
+% 
+%         u(i,j,1) = uold(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
+%         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dudx+rho*uold(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
+%         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dvdx+rho*uold(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
+%     end
+% end
+
+for j = 2:imax-1 %(i=1;i<imax-1;i++)
+    for i = 2:jmax-1 %(j=1;j<jmax-1;j++)
         uvel2 = uold(i,j,2)*uold(i,j,2)+uold(i,j,3)*uold(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))/(two*dx);
@@ -1124,7 +1140,7 @@ for i = 2:imax-1 %(i=1;i<imax-1;i++)
         d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx^2);
         d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy^2);
         d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy^2);
-
+        
         u(i,j,1) = uold(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dudx+rho*uold(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dvdx+rho*uold(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
@@ -1261,39 +1277,23 @@ if imms==1
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-% Exact solution comes from umms(x,y,k) k=0=p k=1=u k=2=v
-% calculate DE and then compute L1, L2, Linf norms
-
-for k = 1:neq %(k=0;k<neq;k++)
-    rL1norm(k) = zero;
-    rL2norm(k) = zero;
-    rLinfnorm(k) = zero;
-end
-
-for i = 2:imax-1 %(i=1;i<imax-1;i++)
-    for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% double %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        x = (xmax - xmin)*(i)/(imax - 1); %x = (xmax - xmin)*(double)(i)/(double)(imax - 1);
-        y = (ymax - ymin)*(j)/(jmax - 1); %y = (ymax - ymin)*(double)(j)/(double)(jmax - 1);
-        for k = 1:neq %(k=0;k<neq;k++)
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% += %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for k = 1:neq
+    for i = 2:imax-1
+        for j = 2:jmax-1
+            x = (xmax-xmin)*(i)/(imax-1);
+            y = (ymax-ymin)*(j)/(jmax-1);
+            
             DE = abs(u(i,j,k)-umms(x,y,k));
-            rL1norm(k) = DE+rL1norm(k); %rL1norm(k)+=abs(u(i,j,k)-umms(x,y,k));
-            rL2norm(k) = DE^2+rL2norm(k); %rL2norm(k)+=(u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k));
+            rL1norm(k) = DE+rL1norm(k);
+            rL2norm(k) = DE^2+rL2norm(k);
             if rLinfnorm(k)<DE
                 rLinfnorm(k) = DE;
             end
-            
-%             rL1norm(k) = (abs(u(i,j,k)-umms(x,y,k)))+rL1norm(k); %rL1norm(k)+=abs(u(i,j,k)-umms(x,y,k));
-%             rL2norm(k) = ((u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k)))+rL2norm(k); %rL2norm(k)+=(u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k));
-%             if rLinfnorm(k)<(abs(u(i,j,k)-umms(x,y,k)))
-%                 rLinfnorm(k) = abs(u(i,j,k)-umms(x,y,k));
-%             end
         end
     end
 end
 
-for k = 1:neq %(k=0;k<neq;k++)
+for k = 1:neq
     rL1norm(k) = rL1norm(k)/(imax*jmax);
     rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
 end
