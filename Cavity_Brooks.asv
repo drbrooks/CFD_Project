@@ -30,8 +30,8 @@ global artviscy;  % Artificial viscosity in y-direction
 global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
-imax = 17;   	% Number of points in the x-direction (use odd numbers only)
-jmax = 17;   	% Number of points in the y-direction (use odd numbers only)
+imax = 9;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 9;   	% Number of points in the y-direction (use odd numbers only)
 neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
 %********************************************
 %***** All  variables declared here. **
@@ -170,7 +170,7 @@ uold = zeros(imax,jmax,neq);
 ummsArray = zeros(imax,jmax,neq);
 s = zeros(imax,jmax,neq);
 res = zeros(neq,1);
-res2 = zeros(neq,1);
+res2 = zeros(1,neq);
 resVect = zeros((imax*jmax),1);
 resinit = zeros(neq,1);
 rL1norm = zeros(neq,1);
@@ -279,8 +279,8 @@ for n = ninit:nmax
     rtime = rtime + dtmin;
     
     % Check iterative convergence using L2 norms of iterative residuals
-    [res, resinit, conv] = check_iterative_convergence(n, res, res2, resVect, resinit, ninit, rtime, dtmin);
-
+    [res, resinit, conv] = check_iterative_convergence(n, res, resinit, ninit, rtime, dtmin);
+    res
     if(conv<toler)
         fprintf(fp1, '%d %e %e %e %e\n',n, rtime, res(1), res(2), res(3));
         isConverged = 1;
@@ -858,8 +858,8 @@ global u dt
 
 dtvisc=(dx*dy)/(four*(rmu/rho)); % Viscous Time Step Stability
 
-for i = 2:imax-1
-    for j = 2:jmax-1 
+for i = 2:imax-1 %(i=1;i<imax-1;i++)
+    for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
         uvel2 = u(i,j,2)^2+u(i,j,3)^2;
         beta2 = max(uvel2,rkappa*vel2ref);
         
@@ -868,8 +868,8 @@ for i = 2:imax-1
         lambda_max = max(lambda_x,lambda_y);
         
         dtconv = dx/lambda_max; % Convective Time Step
-        
         dt(i,j) = cfl*min(dtconv,dtvisc);
+        
         dtmin = min(dt(i,j),dtmin);
     end
 end
@@ -1176,7 +1176,7 @@ u(i,j,1) = u(i,j,1) - deltap;
 end
 %************************************************************************
 function [res, resinit, conv] = check_iterative_convergence...
-    (n, res, res2, resVect, resinit, ninit, rtime, dtmin)
+    (n, res, resinit, ninit, rtime, dtmin)
 %
 %Uses global variable(s): zero
 %Uses global variable(s): imax, jmax, neq, fsmall
@@ -1199,21 +1199,23 @@ global u uold dt fp1
 
 
 count = 1;
-for k = 1:neq
-    for i = 2:imax-1
-        for j = 2:jmax-1
+for k = 1:neq %(k=0;k<neq;k++)
+    for i = 2:imax-1 %(i=1;i<imax-1;i++)
+        for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
             resVect(count) = ((u(i,j,k)-uold(i,j,k))/dt(i,j));
             count = count+1;
         end
     end
-    res(k) = sqrt(sum(abs(resVect).^2)/(imax*jmax));
+    res(k) = norm(resVect,2);
 end
 
 if(n==4)
     resinit = res;
 end
 
-conv = max(res/resinit);
+res2 = res2+abs(res).^2;
+
+conv = max(sqrt(res2./(imax*jmax)));
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
