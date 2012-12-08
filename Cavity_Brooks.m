@@ -61,12 +61,12 @@ six    = 6.0;
 nmax = 500000;        % Maximum number of iterations
 iterout = 5000;       % Number of time steps between solution output
 imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
-isgs = 0 ;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+isgs = 1;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
 
-cfl  = 0.5;         % CFL number used to determine time step
+cfl  = 0.9;         % CFL number used to determine time step
 Cx = 0.01;       	% Parameter for 4th order artificial viscosity in x
 Cy = 0.01;      	% Parameter for 4th order artificial viscosity in y
 toler = 1.e-10; 	% Tolerance for iterative residual convergence
@@ -1291,13 +1291,12 @@ for k = 1:neq
             end
         end
     end
+%     rL1norm(k) = rL1norm(k)/(imax*jmax);
+%     rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
 end
 
-for k = 1:neq
-    rL1norm(k) = rL1norm(k)/(imax*jmax);
-    rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
-end
-
+rL1norm = rL1norm./(imax*jmax);
+rL2norm = sqrt(rL2norm./(imax*jmax));
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Remove? %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % fprintf(fp6,"    L1              L2              Linf\n");
 % fprintf(fp6,"P-> %e   %e   %e\n",rL1norm(0), rL2norm(0), rLinfnorm(0) );
