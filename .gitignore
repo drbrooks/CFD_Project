@@ -15,6 +15,9 @@ local.properties
 .classpath
 .settings/
 .loadpath
+.asm
+.dat
+.out
 
 # External tool builders
 .externalToolBuilders/
