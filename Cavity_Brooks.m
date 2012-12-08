@@ -61,7 +61,7 @@ six    = 6.0;
 nmax = 500000;        % Maximum number of iterations
 iterout = 5000;       % Number of time steps between solution output
 imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
-isgs = 1;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+isgs = 0 ;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
@@ -211,6 +211,7 @@ set_boundary_conditions();
 u
 imax
 jmax
+zero
         pause
 % Write out inital conditions to solution file
 write_output(ninit, resinit, rtime);
@@ -410,7 +411,7 @@ if (irstr==0)   % Starting run from scratch
             s(i,j,2) = zero;
             s(i,j,3) = zero;
         end
-        u(i,jmax,2) = uinf; % Initialize lid (top) to freestream velocity
+        u(imax,jmax,2) = uinf; % Initialize lid (top) to freestream velocity
     end
 else
     if (irstr==1)  % Restarting from previous run (file 'restart.in')
@@ -484,29 +485,21 @@ global u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-        % Top/Bottom BCs does not include corners
-        for i = 2:imax-1 %(i=1;i<imax-1;i++)
-            % Floor BCs
-            u(i,1,1) = two*u(i,1,1)-u(i,2,1); % p0=2p1-p2
-            u(i,1,2) = zero;  % u=0
-            u(i,1,3) = zero;  % v=0
-            % Lid BCs
-            u(i,jmax-1,1) = two*u(i,jmax-2,1)-u(i,jmax-3,1);  % pjmax-1=2pjmax-2-pjmax-3
-            u(i,jmax-1,2) = uinf;   % u=uinf
-            u(i,jmax-1,3) = zero;   % v=0
-        end
-        % Wall BCs  includes all four corners
-        for j = 1:jmax %(j=0;j<jmax;j++)
-            % Right Wall
-            u(1,j,1) = two*u(1,j,1)-u(2,j,1); % p0=2p1-p2
-            u(1,j,2) = zero;  % u=0
-            u(1,j,3) = zero;  % v=0
-            % Left Wall
-            u(imax-1,j,1) = two*u(imax-2,j,1)-u(imax-3,j,1); % pimax-1=2pimax-2-pimax-3
-            u(imax-1,j,2) = zero;  % u=0
-            u(imax-1,j,3) = zero;  % v=0
-        end
-        
+u(:,1,1) = two*u(:,2,1)-u(:,3,1);
+u(:,jmax,1) = two*u(:,jmax-1,1)-u(:,jmax-2,1);
+u(1,:,1) = two*u(2,:,1)-u(3,:,1);
+u(imax,:,1) = two*u(imax-1,:,1)-u(imax-2,:,1);
+
+u(:,1,2) = zero;
+u(:,jmax,2) = uinf;
+u(1,:,2) = zero;
+u(imax,:,2) = zero;
+
+u(:,1,3) = zero;
+u(:,jmax,3) = zero;
+u(1,:,3) = zero;
+u(imax,:,3) = zero;
+
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
 
@@ -861,23 +854,21 @@ global u dt
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-        % dtvisc is global so calculate before loop
-        dtvisc=(dx*dy)/(four*rmu);
-        % Double loop to determine dt(,) and dtmin
+        dtvisc=(dx*dy)/(four*(rmu/rho)); % Viscous Time Step Stability
+        
         for i = 2:imax-1 %(i=1;i<imax-1;i++)
             for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-                % Calculate beta2
-                uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
+                uvel2 = u(i,j,2)^2+u(i,j,3)^2;
                 beta2 = max(uvel2,rkappa*vel2ref);
-                lambda_x = half*(abs(u(i,j,2))+sqrt(u(i,j,2)*u(i,j,2)+four*beta2));
-                lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)*u(i,j,3)+four*beta2));
+                
+                lambda_x = half*(abs(u(i,j,2))+sqrt(u(i,j,2)^2+four*beta2));
+                lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)^2+four*beta2));
                 lambda_max = max(lambda_x,lambda_y);
-                % No need to calculate min between dx and dy due to assumed same grid spacing for x and y
-                dtconv = dx/lambda_max;
+                
+                dtconv = dx/lambda_max; % Convective Time Step
                 dt(i,j) = cfl*min(dtconv,dtvisc);
-                if dtmin > dt(i,j)
-                    dtmin = dt(i,j);
-                end
+                
+                dtmin = min(dt(i,j),dtmin);
             end
         end
 
@@ -922,36 +913,36 @@ global artviscx artviscy
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-        % ARTVISCX CALCULATIONS
-        for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-            for i = 3:imax-2 %(i=2;i<imax-2;i++)
-                uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
-                beta2 = max(uvel2,rkappa*vel2ref);
-                lambda_x = half*(abs(u(i,j,2))+sqrt(u(i,j,2)*u(i,j,2)+four*beta2));
-                d4pdx4 = u(i+2,j,1)-four*u(i+1,j,1)+six*u(i,j,1)-four*u(i-1,j,1)+u(i-2,j,1);
-                artviscx(i,j) = -((lambda_x*Cx)/(beta2*dx))*d4pdx4;   % artvisc terms have negative sign in them so S=artviscx+artviscy
-            end
-            % Left point before wall
-            artviscx(1,j) = artviscx(2,j);
-            % Right point before wall
-            artviscx(imax-2,j) = artviscx(imax-3,j);
-        end
-        % ARTVISCY CALCULATIONS
-        % Calculate artviscy here similar as with x, but switch i and j
-        for i = 2:imax-1 %(i=1;i<imax-1;i++)
-            for j = 3:imax-2 %(j=2;j<imax-2;j++)%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% imax or jmax %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
-                beta2 = max(uvel2,rkappa*vel2ref);
-                lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)*u(i,j,3)+four*beta2));
-                d4pdy4 = u(i,j+2,1)-four*u(i,j+1,1)+six*u(i,j,1)-four*u(i,j-1,1)+u(i,j-2,1);
-                artviscy(i,j) = -(lambda_y*Cy/(beta2*dy))*d4pdy4;   % artvisc terms have negative sign in them so s=artviscx+artviscy
-            end
-            % Point above floor
-            artviscy(i,1) = artviscy(i,2);
-            % Point below lid
-            %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% i or I %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            artviscy(i,jmax-2) = artviscy(i,jmax-3); %artviscy(i,jmax-2) = artviscy(I,jmax-3);
-        end
+% X Artificial Viscosity
+for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
+    for i = 3:imax-2 %(i=2;i<imax-2;i++)
+        uvel2 = u(i,j,2)^2+u(i,j,3)^2;
+        beta2 = max(uvel2,rkappa*vel2ref);
+        lambda_x = half*(abs(u(i,j,2))+sqrt(u(i,j,2)*u(i,j,2)+four*beta2));
+        d4pdx4 = u(i+2,j,1)-four*u(i+1,j,1)+six*u(i,j,1)-four*u(i-1,j,1)+u(i-2,j,1);
+        artviscx(i,j) = -((lambda_x*Cx)/(beta2*dx))*d4pdx4;
+    end
+    % Left point before wall
+    artviscx(2,j) = artviscx(3,j);
+    % Right point before wall
+    artviscx(imax-1,j) = artviscx(imax-2,j);
+end
+
+% Y Artifical Viscosity
+for i = 2:imax-1 %(i=1;i<imax-1;i++)
+    for j = 3:jmax-2 %(j=2;j<imax-2;j++)
+        uvel2 = u(i,j,2)^2+u(i,j,3)^2;
+        beta2 = max(uvel2,rkappa*vel2ref);
+        lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)*u(i,j,3)+four*beta2));
+        d4pdy4 = u(i,j+2,1)-four*u(i,j+1,1)+six*u(i,j,1)-four*u(i,j-1,1)+u(i,j-2,1);
+        artviscy(i,j) = -(lambda_y*Cy/(beta2*dy))*d4pdy4;
+    end
+    % Point above floor
+    artviscy(i,2) = artviscy(i,3);
+    % Point below lid
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% i or I %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    artviscy(i,jmax-1) = artviscy(i,jmax-2); %artviscy(i,jmax-2) = artviscy(I,jmax-3);
+end
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -1003,10 +994,10 @@ for i = 2:imax-1 %(i=1;i<imax-1;i++)
         dpdy = (u(i,j+1,1)-u(i,j-1,1))/(two*dy);
         dudy = (u(i,j+1,2)-u(i,j-1,2))/(two*dy);
         dvdy = (u(i,j+1,3)-u(i,j-1,3))/(two*dy);
-        d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))/(dx*dx);
-        d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))/(dx*dx);
-        d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))/(dy*dy);
-        d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))/(dy*dy);
+        d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))/(dx^2);
+        d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))/(dx^2);
+        d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))/(dy^2);
+        d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))/(dy^2);
         
         u(i,j,1) = u(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
         u(i,j,2) = u(i,j,2)-(dt(i,j)*rhoinv)*(rho*u(i,j,2)*dudx+rho*u(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
@@ -1067,10 +1058,10 @@ for i = imax-2:1 %(i=imax-2;i>0;i--)
         dpdy = (u(i,j+1,1)-u(i,j-1,1))/(two*dy);
         dudy = (u(i,j+1,2)-u(i,j-1,2))/(two*dy);
         dvdy = (u(i,j+1,3)-u(i,j-1,3))/(two*dy);
-        d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))/(dx*dx);
-        d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))/(dx*dx);
-        d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))/(dy*dy);
-        d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))/(dy*dy);
+        d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))/(dx^2);
+        d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))/(dx^2);
+        d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))/(dy^2);
+        d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))/(dy^2);
         
         u(i,j,1) = u(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
         u(i,j,2) = u(i,j,2)-(dt(i,j)*rhoinv)*(rho*u(i,j,2)*dudx+rho*u(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
@@ -1120,13 +1111,8 @@ global u uold artviscx artviscy dt s
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-%  boundary conditions on walls stay the same, so calculations are from i=1:imax-2  j=1:jmax-2
-%  for calculation derivations, check notebook
-
-% Double For Loop run from i=1 to i=imax-2 and j=1 to j=jmax-2
 for i = 2:imax-1 %(i=1;i<imax-1;i++)
     for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-        % Solve for each double value above, use uold to calculate, u becomes next iteration/time step
         uvel2 = uold(i,j,2)*uold(i,j,2)+uold(i,j,3)*uold(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))/(two*dx);
@@ -1135,12 +1121,11 @@ for i = 2:imax-1 %(i=1;i<imax-1;i++)
         dpdy = (uold(i,j+1,1)-uold(i,j-1,1))/(two*dy);
         dudy = (uold(i,j+1,2)-uold(i,j-1,2))/(two*dy);
         dvdy = (uold(i,j+1,3)-uold(i,j-1,3))/(two*dy);
-        d2udx2 = (uold(i+1,j,2)-two*uold(i,j,2)+uold(i-1,j,2))/(dx*dx);
-        d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx*dx);
-        d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy*dy);
-        d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy*dy);
-        
-        % Solve for n+1 terms (next iteration u(,,) terms)
+        d2udx2 = (uold(i+1,j,2)-two*uold(i,j,2)+uold(i-1,j,2))/(dx^2);
+        d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx^2);
+        d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy^2);
+        d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy^2);
+
         u(i,j,1) = uold(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dudx+rho*uold(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dvdx+rho*uold(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
@@ -1213,31 +1198,26 @@ global u uold dt fp1
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-% gets called every iteration
-% calculate L2 norms of residual->conv
-% conv = Minimum of iterative residual norms from three equations
-% NEED TO CALCULATE RESINIT FOR ITERATION 3 ie if n==3.... calculate resinit[]
+rtotal = zeros(neq,1);
+ 
 
 for i = 2:imax-1 %(i=1;i<imax-1;i++)
     for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
         for k = 1:neq %(k=0;k<neq;k++)
-            if(n==3)
+            if(n==4)
                 resinit(k) = -(u(i,j,k)-uold(i,j,k))/dt(i,j);
             end
-            res(k) = -((u(i,j,k)-uold(i,j,k))/dt(i,j))/resinit(k);
+            res(k) = -((u(i,j,k)-uold(i,j,k))/dt(i,j));
+            rtotal(k) = abs(res(k)^2)+rtotal(k); %r1total+=abs(res(0)*res(0));
         end
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% += %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        r1total = abs(res(1)*res(1))+1; %r1total+=abs(res(0)*res(0));
-        r2total = abs(res(2)*res(2))+1; %r2total+=abs(res(1)*res(1));
-        r3total = abs(res(3)*res(3))+1; %r3total+=abs(res(2)*res(2));
-    end
+     end
 end
 
-res(1) = sqrt(r1total/(double((imax-2)*(jmax-2))));
-res(2) = sqrt(r2total/(double(imax*jmax)));
-res(3) = sqrt(r3total/(double(imax*jmax)));
-conv = max(res(1),max(res(2),res(3)));
+for k = 1:neq
+    res(k) = (sqrt(rtotal(k)/(imax*jmax)))/resinit(k);
+end
 
+conv = max(res);
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -1301,18 +1281,25 @@ for i = 2:imax-1 %(i=1;i<imax-1;i++)
         y = (ymax - ymin)*(j)/(jmax - 1); %y = (ymax - ymin)*(double)(j)/(double)(jmax - 1);
         for k = 1:neq %(k=0;k<neq;k++)
             %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% += %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            rL1norm(k) = abs(u(i,j,k)-umms(x,y,k))+1; %rL1norm(k)+=abs(u(i,j,k)-umms(x,y,k));
-            rL2norm(k) = (u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k))+1; %rL2norm(k)+=(u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k));
-            if rLinfnorm(k)<(abs(u(i,j,k)-umms(x,y,k)))
-                rLinfnorm(k) = abs(u(i,j,k)-umms(x,y,k));
+            DE = abs(u(i,j,k)-umms(x,y,k));
+            rL1norm(k) = DE+rL1norm(k); %rL1norm(k)+=abs(u(i,j,k)-umms(x,y,k));
+            rL2norm(k) = DE^2+rL2norm(k); %rL2norm(k)+=(u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k));
+            if rLinfnorm(k)<DE
+                rLinfnorm(k) = DE;
             end
+            
+%             rL1norm(k) = (abs(u(i,j,k)-umms(x,y,k)))+rL1norm(k); %rL1norm(k)+=abs(u(i,j,k)-umms(x,y,k));
+%             rL2norm(k) = ((u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k)))+rL2norm(k); %rL2norm(k)+=(u(i,j,k)-umms(x,y,k))*(u(i,j,k)-umms(x,y,k));
+%             if rLinfnorm(k)<(abs(u(i,j,k)-umms(x,y,k)))
+%                 rLinfnorm(k) = abs(u(i,j,k)-umms(x,y,k));
+%             end
         end
     end
 end
 
 for k = 1:neq %(k=0;k<neq;k++)
-    rL1norm(k) = rL1norm(k)/(double(imax*jmax));
-    rL2norm(k) = sqrt(rL2norm(k)/(double(imax*jmax)));
+    rL1norm(k) = rL1norm(k)/(imax*jmax);
+    rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Remove? %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
