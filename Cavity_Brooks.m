@@ -30,8 +30,8 @@ global artviscy;  % Artificial viscosity in y-direction
 global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
-imax = 17;   	% Number of points in the x-direction (use odd numbers only)
-jmax = 17 ;   	% Number of points in the y-direction (use odd numbers only)
+imax = 65;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 65;   	% Number of points in the y-direction (use odd numbers only)
 neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
 %********************************************
 %***** All  variables declared here. **
@@ -61,12 +61,12 @@ six    = 6.0;
 nmax = 500000;        % Maximum number of iterations
 iterout = 5000;       % Number of time steps between solution output
 imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
-isgs = 1;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
 
-cfl  = 0.9;         % CFL number used to determine time step
+cfl  = 0.3;         % CFL number used to determine time step
 Cx = 0.01;       	% Parameter for 4th order artificial viscosity in x
 Cy = 0.01;      	% Parameter for 4th order artificial viscosity in y
 toler = 1.e-10; 	% Tolerance for iterative residual convergence
@@ -911,8 +911,8 @@ global artviscx artviscy
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
 % X Artificial Viscosity
-for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-    for i = 3:imax-2 %(i=2;i<imax-2;i++)
+for j = 2:jmax-1
+    for i = 3:imax-2
         uvel2 = u(i,j,2)^2+u(i,j,3)^2;
         beta2 = max(uvel2,rkappa*vel2ref);
         lambda_x = half*(abs(u(i,j,2))+sqrt(u(i,j,2)*u(i,j,2)+four*beta2));
@@ -925,8 +925,8 @@ for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
 end
 
 % Y Artifical Viscosity
-for i = 2:imax-1 %(i=1;i<imax-1;i++)
-    for j = 3:jmax-2 %(j=2;j<imax-2;j++)
+for i = 2:imax-1
+    for j = 3:jmax-2
         uvel2 = u(i,j,2)^2+u(i,j,3)^2;
         beta2 = max(uvel2,rkappa*vel2ref);
         lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)*u(i,j,3)+four*beta2));
@@ -978,8 +978,8 @@ global artviscx artviscy dt s u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-for i = 2:imax-1 %(i=1;i<imax-1;i++)
-    for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
+for i = 2:imax-1
+    for j = 2:jmax-1
         uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (u(i+1,j,1)-u(i-1,j,1))/(two*dx);
@@ -1042,8 +1042,8 @@ global artviscx artviscy dt s u
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-for i = imax-2:1 %(i=imax-2;i>0;i--)
-    for j = jmax-2:1 %(j=jmax-2;j>0;j--)
+for i = imax-2:1
+    for j = jmax-2:1
         uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (u(i+1,j,1)-u(i-1,j,1))/(two*dx);
@@ -1105,29 +1105,8 @@ global u uold artviscx artviscy dt s
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-% for i = 2:imax-1 %(i=1;i<imax-1;i++)
-%     for j = 2:jmax-1 %(j=1;j<jmax-1;j++)
-%         uvel2 = uold(i,j,2)*uold(i,j,2)+uold(i,j,3)*uold(i,j,3);
-%         beta2 = max(uvel2,rkappa*vel2ref);
-%         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))/(two*dx);
-%         dudx = (uold(i+1,j,2)-uold(i-1,j,2))/(two*dx);
-%         dvdx = (uold(i+1,j,3)-uold(i-1,j,3))/(two*dx);
-%         dpdy = (uold(i,j+1,1)-uold(i,j-1,1))/(two*dy);
-%         dudy = (uold(i,j+1,2)-uold(i,j-1,2))/(two*dy);
-%         dvdy = (uold(i,j+1,3)-uold(i,j-1,3))/(two*dy);
-%         d2udx2 = (uold(i+1,j,2)-two*uold(i,j,2)+uold(i-1,j,2))/(dx^2);
-%         d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx^2);
-%         d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy^2);
-%         d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy^2);
-% 
-%         u(i,j,1) = uold(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
-%         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dudx+rho*uold(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
-%         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dvdx+rho*uold(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
-%     end
-% end
-
-for j = 2:imax-1 %(i=1;i<imax-1;i++)
-    for i = 2:jmax-1 %(j=1;j<jmax-1;j++)
+for j = 2:imax-1
+    for i = 2:jmax-1
         uvel2 = uold(i,j,2)*uold(i,j,2)+uold(i,j,3)*uold(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))/(two*dx);
@@ -1297,11 +1276,6 @@ end
 
 rL1norm = rL1norm./(imax*jmax);
 rL2norm = sqrt(rL2norm./(imax*jmax));
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Remove? %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% fprintf(fp6,"    L1              L2              Linf\n");
-% fprintf(fp6,"P-> %e   %e   %e\n",rL1norm(0), rL2norm(0), rLinfnorm(0) );
-% fprintf(fp6,"u-> %e   %e   %e\n",rL1norm(1), rL2norm(1), rLinfnorm(1) );
-% fprintf(fp6,"v-> %e   %e   %e\n",rL1norm(2), rL2norm(2), rLinfnorm(2) );
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
