@@ -1,3 +1,57 @@
+function [PrsMatrix, uvelMatrix, vvelMatrix] = Cavity_Brooks_MultiRun(~)
+global imax jmax neq nmax cfl imms isgs CASE
+
+CASE = 17;
+imax = 17;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 17;   	% Number of points in the y-direction (use odd numbers only)
+neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+nmax = 2000000;        % Maximum number of iterations
+cfl  = 0.3;         % CFL number used to determine time step
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+cavity_solver();
+
+CASE = 33;
+imax = 33;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 33;   	% Number of points in the y-direction (use odd numbers only)
+neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+nmax = 2000000;        % Maximum number of iterations
+cfl  = 0.3;         % CFL number used to determine time step
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+cavity_solver();
+
+CASE = 65;
+imax = 65;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 65;   	% Number of points in the y-direction (use odd numbers only)
+neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+nmax = 2000000;        % Maximum number of iterations
+cfl  = 0.3;         % CFL number used to determine time step
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+cavity_solver();
+
+CASE = 129;
+imax = 129;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 129;   	% Number of points in the y-direction (use odd numbers only)
+neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+nmax = 2000000;        % Maximum number of iterations
+cfl  = 0.3;         % CFL number used to determine time step
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+cavity_solver();
+
+CASE = 257;
+imax = 257;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 257;   	% Number of points in the y-direction (use odd numbers only)
+neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+nmax = 2000000;        % Maximum number of iterations
+cfl  = 0.4;         % CFL number used to determine time step
+imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+cavity_solver();
+
+
 function [PrsMatrix, uvelMatrix, vvelMatrix] = cavity_solver(~)
 % Donald Brooks
 % Adv Intro CFD
@@ -14,9 +68,9 @@ global fp2 % For output of field data (solution)
 %   global fp5 % For output of final DE norms (only for MMS)
 %$$$$$$   global fp6 % For debug: Uncomment for debugging.
 
-global imax jmax neq nmax
+% global imax jmax neq nmax
 global zero tenth sixth fifth fourth third half one two three four six
-global iterout imms isgs irstr ipgorder lim cfl Cx Cy toler rkappa Re pinf uinf rho rhoinv xmin xmax ymin ymax Cx2 Cy2 fsmall
+global iterout irstr ipgorder lim Cx Cy toler rkappa Re pinf uinf rho rhoinv xmin xmax ymin ymax Cx2 Cy2 fsmall
 global rlength rmu vel2ref dx dy rpi phi0 phix phiy phixy apx apy apxy fsinx fsiny fsinxy
 
 %**Use these variables cautiously as these are globally accessible from all functions.**
@@ -30,9 +84,9 @@ global artviscy;  % Artificial viscosity in y-direction
 global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
-imax = 257;   	% Number of points in the x-direction (use odd numbers only)
-jmax = 257;   	% Number of points in the y-direction (use odd numbers only)
-neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
+% imax = 65;   	% Number of points in the x-direction (use odd numbers only)
+% jmax = 65;   	% Number of points in the y-direction (use odd numbers only)
+% neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
 %********************************************
 %***** All  variables declared here. **
 %**** These variables SHOULD not be changed *
@@ -58,15 +112,15 @@ six    = 6.0;
 
 %--------- User sets inputs here  --------
 
-nmax = 500000;        % Maximum number of iterations
+
 iterout = 5000;       % Number of time steps between solution output
-imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
-isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
+% imms = 1;             % Manufactured solution flag: = 1 for manuf. sol., = 0 otherwise
+% isgs = 0;             % Symmetric Gauss-Seidel  flag: = 1 for SGS, = 0 for point Jacobi
 irstr = 0;            % Restart flag: = 1 for restart (file 'restart.in', = 0 for initial run
 ipgorder = 0;         % Order of pressure gradient: 0 = 2nd, 1 = 3rd (not needed)
 lim = 1;              % variable to be used as the limiter sensor (= 1 for pressure)
 
-cfl  = 0.4;         % CFL number used to determine time step
+% cfl  = 0.3;         % CFL number used to determine time step
 Cx = 0.01;       	% Parameter for 4th order artificial viscosity in x
 Cy = 0.01;      	% Parameter for 4th order artificial viscosity in y
 toler = 1.e-10; 	% Tolerance for iterative residual convergence
@@ -321,7 +375,7 @@ end
 %**************************************************************************
 %**************************************************************************
 function set_derived_inputs(~)
-global imax jmax
+% global imax jmax
 global one
 global Re uinf rho rhoinv xmin xmax ymin ymax
 global rlength rmu vel2ref dx dy rpi
@@ -344,13 +398,13 @@ function output_file_headers(~)
 %               u = [p, u, v]^T
 % Set up output files (history and solution)
 
-global imms fp1 fp2
+global fp1 fp2
 
-fp1 = fopen('./history.dat','w');
+fp1 = fopen(strcat('./history_',num2str(CASE),'.dat'),'w');
 fprintf(fp1,'TITLE = "Cavity Iterative Residual History"\n');
 fprintf(fp1,'variables="Iteration""Time(s)""Res1""Res2""Res3"\n');
 
-fp2 = fopen('./cavity.dat','w');
+fp2 = fopen(strcat('./cavity_',num2str(CASE),'.dat'),'w');
 fprintf(fp2,'TITLE = "Cavity Field Data"\n');
 if (imms==1)
     
@@ -390,7 +444,7 @@ function [ninit, rtime, resinit] = initial(ninit, rtime, resinit)
 % Note: The vector of primitive variables is:
 %              u = (p, u, v)^T
 
-global zero one irstr imax jmax neq uinf pinf xmax xmin ymax ymin
+global zero one irstr uinf pinf xmax xmin ymax ymin
 global u s ummsArray
 
 if (irstr==0)   % Starting run from scratch
@@ -450,7 +504,7 @@ function set_boundary_conditions(~)
 %Uses global variable(s): imms
 %To modify: u (via other functions: bndry() and bndrymms())
 
-global imms
+% global imms
 
 % This subroutine determines the appropriate BC routines to call
 if (imms==0)
@@ -473,7 +527,7 @@ function bndry(~)
 % i                        % i index (x direction)
 % j                        % j index (y direction)
 
-global zero two half imax jmax uinf
+global zero two half uinf
 global u
 
 % This applies the cavity boundary conditions
@@ -513,7 +567,7 @@ function bndrymms(~)
 % y        % Temporary variable for y location
 % This applies the cavity boundary conditions for the manufactured solution
 
-global two imax jmax neq
+global two
 global u ummsArray
 
 % Side Walls
@@ -596,7 +650,7 @@ function write_output( n,  resinit,  rtime)
 % x        % Temporary variable for x location
 % y        % Temporary variable for y location
 
-global imax jmax xmax xmin ymax ymin imms
+global xmax xmin ymax ymin
 global u ummsArray
 global fp2 fp3
 
@@ -659,7 +713,7 @@ function compute_source_terms(~)
 
 % Evaluate Source Terms Once at Beginning (only %erior po%s; will be zero for standard cavity)
 
-global imax jmax imms xmax xmin ymax ymin
+global xmax xmin ymax ymin
 global s
 
 for j=2:jmax-1
@@ -843,7 +897,7 @@ function [dtmin] = compute_time_step(dtmin)
 % dtconv       % Local convective time step restriction
 
 global four half fourth
-global vel2ref rmu rho dx dy cfl rkappa imax jmax
+global vel2ref rmu rho dx dy rkappa
 global u dt
 
 
@@ -897,7 +951,7 @@ function Compute_Artificial_Viscosity(~)
 % not used]
 
 global two four six half
-global imax jmax lim rho dx dy Cx Cy Cx2 Cy2 fsmall vel2ref rkappa
+global lim rho dx dy Cx Cy Cx2 Cy2 fsmall vel2ref rkappa
 global u
 global artviscx artviscy
 
@@ -964,7 +1018,7 @@ function SGS_forward_sweep(~)
 % uvel2        % Velocity squared
 
 global two half
-global imax jmax rho rhoinv dx dy rkappa rmu vel2ref
+global rho rhoinv dx dy rkappa rmu vel2ref
 global artviscx artviscy dt s u
 
 % Symmetric Gauss-Siedel: Forward Sweep
@@ -1028,7 +1082,7 @@ function SGS_backward_sweep(~)
 % uvel2        % Velocity squared
 
 global two half
-global imax jmax rho rhoinv dx dy rkappa rmu vel2ref
+global rho rhoinv dx dy rkappa rmu vel2ref
 global artviscx artviscy dt s u
 
 % Symmetric Gauss-Siedel: Backward Sweep
@@ -1039,7 +1093,7 @@ global artviscx artviscy dt s u
 
 for i = imax-2:1
     for j = jmax-2:1
-        uvel2 = u(i,j,2)^2+u(i,j,3)^2;
+        uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (u(i+1,j,1)-u(i-1,j,1))/(two*dx);
         dudx = (u(i+1,j,2)-u(i-1,j,2))/(two*dx);
@@ -1091,7 +1145,7 @@ function point_Jacobi(~)
 % beta2        % Beta squared parameter for time derivative preconditioning
 % uvel2        % Velocity squared
 global two half
-global imax jmax rho rhoinv dx dy rkappa rmu vel2ref
+global rho rhoinv dx dy rkappa rmu vel2ref
 global u uold artviscx artviscy dt s
 
 % Point Jacobi method
@@ -1144,7 +1198,7 @@ function pressure_rescaling(~)
 % y        % Temporary variable for y location
 % deltap   % delta_pressure for rescaling all values
 
-global imax jmax imms xmax xmin ymax ymin pinf
+global xmax xmin ymax ymin pinf
 global u
 
 iref = (imax-1)/2+1;     % Set reference pressure to center of cavity
@@ -1177,7 +1231,7 @@ function [res, resinit, conv] = check_iterative_convergence...
 % k                        % k index (# of equations)
 
 global zero
-global imax jmax neq fsmall
+global fsmall
 global u uold dt fp1
 
 % Compute iterative residuals to monitor iterative convergence
@@ -1185,25 +1239,6 @@ global u uold dt fp1
 % !************************************************************** */
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
-
-% 
-% count = 1;
-% for k = 1:neq
-%     for i = 2:imax-1
-%         for j = 2:jmax-1
-%             resVect(count) = ((u(i,j,k)-uold(i,j,k))/dt(i,j));
-%             count = count+1;
-%         end
-%     end
-%     res(k) = sqrt(sum(abs(resVect).^2)/(imax*jmax));
-% end
-% 
-% if(n==4)
-%     resinit = res;
-% end
-% 
-% conv = max(res/resinit);
-
 
 i = 2:imax-1;
 j = 2:jmax-1;
@@ -1228,13 +1263,14 @@ conv = max(res./resinit);
 % Write iterative residuals every 10 iterations
 if ( (mod(n,10)==0)||(n==ninit) )
     fprintf(fp1, '%d %e %e %e %e\n',n, rtime, res(1), res(2), res(3) );
-    fprintf('%d   %e   %e   %e   %e   %e\n',n, rtime, dtmin, res(1), res(2), res(3) );
+%     fprintf('%d   %e   %e   %e   %e   %e\n',n, rtime, dtmin, res(1), res(2), res(3) );
     % Maybe a need to format this better
 end
 
 % Write header for iterative residuals every 200 iterations
 if ( (mod(n,200)==0)||(n==ninit) )
-    fprintf('Iter. Time (s)   dt (s)      Continuity    x-Momentum    y-Momentum\n');
+%     fprintf('Iter. Time (s)   dt (s)      Continuity    x-Momentum    y-Momentum\n');
+    fprintf('%d   %e   %e   %e   %e   %e\n',n, rtime, dtmin, res(1), res(2), res(3) );
 end
 
 end
@@ -1256,7 +1292,7 @@ function Discretization_Error_Norms(rL1norm, rL2norm, rLinfnorm)
 % y        % Temporary variable for y location
 % DE   	% Discretization error (absolute value)
 
-global zero imax jmax neq imms xmax xmin ymax ymin u
+global zero xmax xmin ymax ymin u
 
 if imms==1
 
@@ -1278,29 +1314,18 @@ for k = 1:neq
             end
         end
     end
+%     rL1norm(k) = rL1norm(k)/(imax*jmax);
+%     rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
 end
 
-% for k = 1:neq
-% i = 2:imax-1;
-% j = 2:jmax-1;
-%             x = (xmax-xmin).*(i)./(imax-1);
-%             y = (ymax-ymin).*(j)./(jmax-1);
-%             umms(x,y,k)
-%             u(i,j,k)
-%             DE = abs(u(i,j,k)-umms(x,y,k))
-%             rL1norm(k) = sum(sum(DE))/(imax*jmax);
-%             rL2norm(k) = sum(sum(DE.^2))/(imax*jmax);
-%             if rLinfnorm(k)<DE(k)
-%                 rLinfnorm(k) = DE(k);
-%             end
-% end
-
+rL1norm = rL1norm./(imax*jmax);
+rL2norm = sqrt(rL2norm./(imax*jmax));
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
 
 
-
+end
 
 end
 
