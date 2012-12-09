@@ -30,8 +30,8 @@ global artviscy;  % Artificial viscosity in y-direction
 global ummsArray; % Array of umms values (funtion umms evaluated at all nodes)
 
 %************ Following are fixed parameters for array sizes *************
-imax = 65;   	% Number of points in the x-direction (use odd numbers only)
-jmax = 65;   	% Number of points in the y-direction (use odd numbers only)
+imax = 17;   	% Number of points in the x-direction (use odd numbers only)
+jmax = 17;   	% Number of points in the y-direction (use odd numbers only)
 neq = 3;        % Number of equation to be solved ( = 3: mass, x-mtm, y-mtm)
 %********************************************
 %***** All  variables declared here. **
@@ -851,10 +851,10 @@ global u dt
 % !************ADD CODING HERE FOR INTRO CFD STUDENTS************ */
 % !vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv */
 
-dtvisc=(dx*dy)/(four*(rmu/rho)); % Viscous Time Step Stability
-
-for i = 2:imax-1
-    for j = 2:jmax-1 
+dtvisc = (dx*dy)/(four*(rmu/rho)); % Viscous Time Step Stability
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% i = 2:imax-1 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+for i = 1:imax
+    for j = 1:jmax
         uvel2 = u(i,j,2)^2+u(i,j,3)^2;
         beta2 = max(uvel2,rkappa*vel2ref);
         
@@ -868,6 +868,18 @@ for i = 2:imax-1
         dtmin = min(dt(i,j),dtmin);
     end
 end
+
+%         uvel2 = u(:,:,2).^2+u(:,:,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         
+%         lambda_x = half*(abs(u(:,:,2))+sqrt(u(:,:,2).^2+four.*beta2));
+%         lambda_y = half*(abs(u(:,:,3))+sqrt(u(:,:,3).^2+four.*beta2));
+%         lambda_max = max(lambda_x,lambda_y);
+%         
+%         dtconv = dx./lambda_max; % Convective Time Step
+%         
+%         dt = cfl.*min(dtconv,dtvisc);
+%         dtmin = min(min(min(dt)),dtmin);
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -929,7 +941,7 @@ for i = 2:imax-1
     for j = 3:jmax-2
         uvel2 = u(i,j,2)^2+u(i,j,3)^2;
         beta2 = max(uvel2,rkappa*vel2ref);
-        lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)*u(i,j,3)+four*beta2));
+        lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3)^2+four*beta2));
         d4pdy4 = u(i,j+2,1)-four*u(i,j+1,1)+six*u(i,j,1)-four*u(i,j-1,1)+u(i,j-2,1);
         artviscy(i,j) = -(lambda_y*Cy/(beta2*dy))*d4pdy4;
     end
@@ -937,6 +949,34 @@ for i = 2:imax-1
     artviscy(i,2) = artviscy(i,3);
     artviscy(i,jmax-1) = artviscy(i,jmax-2);
 end
+
+% % X Artificial Viscosity
+% j = 2:jmax-1;
+% i = 3:imax-2;
+%         uvel2 = u(i,j,2).^2+u(i,j,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         lambda_x = half.*(abs(u(i,j,2))+sqrt(u(i,j,2).^2+four*beta2));
+%         d4pdx4 = u(i+2,j,1)-four*u(i+1,j,1)+six*u(i,j,1)-four*u(i-1,j,1)+u(i-2,j,1);
+%         artviscx(i,j) = -((lambda_x*Cx)./(beta2*dx)).*d4pdx4;
+%         
+%     % Special Consideration for Boundaries
+%     artviscx(2,j) = artviscx(3,j);
+%     artviscx(imax-1,j) = artviscx(imax-2,j);
+% 
+% 
+% % Y Artifical Viscosity
+% i = 2:imax-1;
+% j = 3:jmax-2;
+%         uvel2 = u(i,j,2).^2+u(i,j,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         lambda_y = half*(abs(u(i,j,3))+sqrt(u(i,j,3).^2+four*beta2));
+%         d4pdy4 = u(i,j+2,1)-four*u(i,j+1,1)+six*u(i,j,1)-four*u(i,j-1,1)+u(i,j-2,1);
+%         artviscy(i,j) = -(lambda_y*Cy./(beta2*dy)).*d4pdy4;
+% 
+%     % Special Consideration for Boundaries
+%     artviscy(i,2) = artviscy(i,3);
+%     artviscy(i,jmax-1) = artviscy(i,jmax-2);
+
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -980,7 +1020,7 @@ global artviscx artviscy dt s u
 
 for i = 2:imax-1
     for j = 2:jmax-1
-        uvel2 = u(i,j,2)^2+u(i,j,3)^2;
+        uvel2 = u(i,j,2)*u(i,j,2)+u(i,j,3)*u(i,j,3);
         beta2 = max(uvel2,rkappa*vel2ref);
         dpdx = (u(i+1,j,1)-u(i-1,j,1))/(two*dx);
         dudx = (u(i+1,j,2)-u(i-1,j,2))/(two*dx);
@@ -998,6 +1038,25 @@ for i = 2:imax-1
         u(i,j,3) = u(i,j,3)-(dt(i,j)*rhoinv)*(rho*u(i,j,2)*dvdx+rho*u(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
     end
 end
+
+% i = 2:imax-1;
+% j = 2:jmax-1;
+%         uvel2 = u(i,j,2).^2+u(i,j,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         dpdx = (u(i+1,j,1)-u(i-1,j,1))./(two*dx);
+%         dudx = (u(i+1,j,2)-u(i-1,j,2))./(two*dx);
+%         dvdx = (u(i+1,j,3)-u(i-1,j,3))./(two*dx);
+%         dpdy = (u(i,j+1,1)-u(i,j-1,1))./(two*dy);
+%         dudy = (u(i,j+1,2)-u(i,j-1,2))./(two*dy);
+%         dvdy = (u(i,j+1,3)-u(i,j-1,3))./(two*dy);
+%         d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))./(dx^2);
+%         d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))./(dx^2);
+%         d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))./(dy^2);
+%         d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))./(dy^2);
+%         
+%         u(i,j,1) = u(i,j,1)-beta2.*dt(i,j).*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
+%         u(i,j,2) = u(i,j,2)-(dt(i,j)*rhoinv)*(rho*u(i,j,2).*dudx+rho*u(i,j,3).*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
+%         u(i,j,3) = u(i,j,3)-(dt(i,j)*rhoinv)*(rho*u(i,j,2).*dvdx+rho*u(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -1062,6 +1121,26 @@ for i = imax-2:1
         u(i,j,3) = u(i,j,3)-(dt(i,j)*rhoinv)*(rho*u(i,j,2)*dvdx+rho*u(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
     end
 end
+% 
+% i = imax-2:1;
+% j = jmax-2:1;
+%         uvel2 = u(i,j,2).^2+u(i,j,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         dpdx = (u(i+1,j,1)-u(i-1,j,1))./(two*dx);
+%         dudx = (u(i+1,j,2)-u(i-1,j,2))./(two*dx);
+%         dvdx = (u(i+1,j,3)-u(i-1,j,3))./(two*dx);
+%         dpdy = (u(i,j+1,1)-u(i,j-1,1))./(two*dy);
+%         dudy = (u(i,j+1,2)-u(i,j-1,2))./(two*dy);
+%         dvdy = (u(i,j+1,3)-u(i,j-1,3))./(two*dy);
+%         d2udx2 = (u(i+1,j,2)-two*u(i,j,2)+u(i-1,j,2))./(dx^2);
+%         d2vdx2 = (u(i+1,j,3)-two*u(i,j,3)+u(i-1,j,3))./(dx^2);
+%         d2udy2 = (u(i,j+1,2)-two*u(i,j,2)+u(i,j-1,2))./(dy^2);
+%         d2vdy2 = (u(i,j+1,3)-two*u(i,j,3)+u(i,j-1,3))./(dy^2);
+%         
+%         u(i,j,1) = u(i,j,1)-beta2.*dt(i,j).*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
+%         u(i,j,2) = u(i,j,2)-(dt(i,j)*rhoinv).*(rho*u(i,j,2).*dudx+rho*u(i,j,3).*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
+%         u(i,j,3) = u(i,j,3)-(dt(i,j)*rhoinv).*(rho*u(i,j,2)*dvdx+rho*u(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
+
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -1119,12 +1198,32 @@ for j = 2:imax-1
         d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))/(dx^2);
         d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))/(dy^2);
         d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))/(dy^2);
-        
+        dudx2(i,j) = dudx;
         u(i,j,1) = uold(i,j,1)-beta2*dt(i,j)*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dudx+rho*uold(i,j,3)*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv)*(rho*uold(i,j,2)*dvdx+rho*uold(i,j,3)*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
     end
 end
+
+% i = 2:imax-1;
+% j = 2:jmax-1;
+%         uvel2 = uold(i,j,2).^2+uold(i,j,3).^2;
+%         beta2 = max(uvel2,rkappa*vel2ref);
+%         
+%         dpdx = (uold(i+1,j,1)-uold(i-1,j,1))./(two*dx);
+%         dudx = (uold(i+1,j,2)-uold(i-1,j,2))./(two*dx);
+%         dvdx = (uold(i+1,j,3)-uold(i-1,j,3))./(two*dx);
+%         dpdy = (uold(i,j+1,1)-uold(i,j-1,1))./(two*dy);
+%         dudy = (uold(i,j+1,2)-uold(i,j-1,2))./(two*dy);
+%         dvdy = (uold(i,j+1,3)-uold(i,j-1,3))./(two*dy);
+%         d2udx2 = (uold(i+1,j,2)-two*uold(i,j,2)+uold(i-1,j,2))./(dx^2);
+%         d2vdx2 = (uold(i+1,j,3)-two*uold(i,j,3)+uold(i-1,j,3))./(dx^2);
+%         d2udy2 = (uold(i,j+1,2)-two*uold(i,j,2)+uold(i,j-1,2))./(dy^2);
+%         d2vdy2 = (uold(i,j+1,3)-two*uold(i,j,3)+uold(i,j-1,3))./(dy^2);
+% 
+%         u(i,j,1) = uold(i,j,1)-beta2.*dt(i,j).*(rho*dudx+rho*dvdy-s(i,j,1)-artviscx(i,j)-artviscy(i,j));
+%         u(i,j,2) = uold(i,j,2)-(dt(i,j)*rhoinv).*(rho*uold(i,j,2).*dudx+rho*uold(i,j,3).*dudy+dpdx-rmu*d2udx2-rmu*d2udy2-s(i,j,2));
+%         u(i,j,3) = uold(i,j,3)-(dt(i,j)*rhoinv).*(rho*uold(i,j,2).*dvdx+rho*uold(i,j,3).*dvdy+dpdy-rmu*d2vdx2-rmu*d2vdy2-s(i,j,3));
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
@@ -1210,6 +1309,20 @@ end
 
 conv = max(res/resinit);
 
+
+% i = 2:imax-1;
+% j = 2:jmax-1;
+% 
+% for k = 1:neq
+%     res(k) = sqrt(sum(sum(abs(((u(i,j,k)-uold(i,j,k))./dt(i,j))).^2))/(imax*jmax));
+% end
+% 
+% if(n==4)
+%     resinit = res;
+% end
+% 
+% conv = max(res./resinit);
+
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
 
@@ -1270,12 +1383,23 @@ for k = 1:neq
             end
         end
     end
-%     rL1norm(k) = rL1norm(k)/(imax*jmax);
-%     rL2norm(k) = sqrt(rL2norm(k)/(imax*jmax));
 end
 
-rL1norm = rL1norm./(imax*jmax);
-rL2norm = sqrt(rL2norm./(imax*jmax));
+% for k = 1:neq
+% i = 2:imax-1;
+% j = 2:jmax-1;
+%             x = (xmax-xmin).*(i)./(imax-1);
+%             y = (ymax-ymin).*(j)./(jmax-1);
+%             umms(x,y,k)
+%             u(i,j,k)
+%             DE = abs(u(i,j,k)-umms(x,y,k))
+%             rL1norm(k) = sum(sum(DE))/(imax*jmax);
+%             rL2norm(k) = sum(sum(DE.^2))/(imax*jmax);
+%             if rLinfnorm(k)<DE(k)
+%                 rLinfnorm(k) = DE(k);
+%             end
+% end
+
 
 % !^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ */
 % !************************************************************** */
